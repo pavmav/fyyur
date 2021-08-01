@@ -13,6 +13,7 @@ import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
+from sqlalchemy.sql import func
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -40,18 +41,31 @@ class Venue(db.Model):
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
     website = db.Column(db.String())
-    # genres
+    genres = db.Column(db.ARRAY(db.String), default=[])
     seeking_talent = db.Column(db.Boolean, default=True)
     seeking_description = db.Column(db.String())
     image_link = db.Column(db.String())
-    # past_shows ?
-    # upcoming_shows
-    # past_shows_count
-    # upcoming_shows_count
+    shows = db.relationship('Show', backref='venue')
 
+    @property
+    def past_shows(self):
+      return Show.query.filter(Show.venue_id == self.id, 
+                              Show.start_time < func.now()).all()
 
+    @property
+    def past_shows_count(self):
+      return Show.query.filter(Show.venue_id == self.id, 
+                              Show.start_time < func.now()).count()
 
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
+    @property
+    def upcoming_shows(self):
+      return Show.query.filter(Show.venue_id == self.id, 
+                              Show.start_time > func.now()).all()
+
+    @property
+    def upcoming_shows_count(self):
+      return Show.query.filter(Show.venue_id == self.id, 
+                              Show.start_time > func.now()).count()
 
 class Artist(db.Model):
     __tablename__ = 'Artist'
@@ -61,33 +75,64 @@ class Artist(db.Model):
     city = db.Column(db.String(120))
     state = db.Column(db.String(120))
     phone = db.Column(db.String(120))
-    genres = db.Column(db.String(120)) # List?
+    genres = db.Column(db.ARRAY(db.String), default=[])
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
     website = db.Column(db.String())
     seeking_venue = db.Column(db.Boolean, default=True)
     seeking_description = db.Column(db.String())
-    # past_shows
-    # upcoming_shows
-    # past_shows_count
-    # upcoming_shows_count
+    shows = db.relationship('Show', backref='artist')
 
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
+    @property
+    def past_shows(self):
+      return Show.query.filter(Show.artist_id == self.id, 
+                              Show.start_time < func.now()).all()
+
+    @property
+    def past_shows_count(self):
+      return Show.query.filter(Show.artist_id == self.id, 
+                              Show.start_time < func.now()).count()
+
+    @property
+    def upcoming_shows(self):
+      return Show.query.filter(Show.artist_id == self.id, 
+                              Show.start_time > func.now()).all()
+
+    @property
+    def upcoming_shows_count(self):
+      return Show.query.filter(Show.artist_id == self.id, 
+                              Show.start_time > func.now()).count()
 
 class Show(db.Model):
     __tablename__ = 'Show'
     id = db.Column(db.Integer, primary_key=True)
-    venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'))
-    artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'))
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'), nullable=False)
+    artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'), nullable=False)
     start_time = db.Column(db.DateTime)
 
-# TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
+    @property
+    def venue_name(self):
+      return Venue.query.get(self.venue_id).name
+
+    @property
+    def artist_name(self):
+      return Artist.query.get(self.artist_id).name
+
+    @property
+    def artist_image_link(self):
+      return Artist.query.get(self.artist_id).image_link
+
+    @property
+    def venue_image_link(self):
+      return Venue.query.get(self.venue_id).image_link
+
 
 #----------------------------------------------------------------------------#
 # Filters.
 #----------------------------------------------------------------------------#
 
 def format_datetime(value, format='medium'):
+  value = str(value)
   date = dateutil.parser.parse(value)
   if format == 'full':
       format="EEEE MMMM, d, y 'at' h:mma"
@@ -134,6 +179,16 @@ def venues():
       "num_upcoming_shows": 0,
     }]
   }]
+
+  data = []
+  places = db.session.query(Artist.city, Artist.state).distinct().all()
+  for place in places:
+    data.append({
+      'city': place[0],
+      'state': place[1],
+      'venues': Venue.query.filter(Venue.city == place[0], Venue.state == place[1]).all()
+    })
+
   return render_template('pages/venues.html', areas=data);
 
 @app.route('/venues/search', methods=['POST'])
@@ -232,7 +287,8 @@ def show_venue(venue_id):
     "past_shows_count": 1,
     "upcoming_shows_count": 1,
   }
-  data = list(filter(lambda d: d['id'] == venue_id, [data1, data2, data3]))[0]
+  #data = list(filter(lambda d: d['id'] == venue_id, [data1, data2, data3]))[0]
+  data = Venue.query.get(venue_id)
   return render_template('pages/show_venue.html', venue=data)
 
 #  Create Venue
@@ -279,7 +335,8 @@ def artists():
     "id": 6,
     "name": "The Wild Sax Band",
   }]
-  return render_template('pages/artists.html', artists=data)
+  # return render_template('pages/artists.html', artists=data)
+  return render_template('pages/artists.html', artists=Artist.query.all())
 
 @app.route('/artists/search', methods=['POST'])
 def search_artists():
@@ -371,8 +428,9 @@ def show_artist(artist_id):
     "past_shows_count": 0,
     "upcoming_shows_count": 3,
   }
-  data = list(filter(lambda d: d['id'] == artist_id, [data1, data2, data3]))[0]
-  return render_template('pages/show_artist.html', artist=data)
+  #data = list(filter(lambda d: d['id'] == artist_id, [data1, data2, data3]))[0]
+  #return render_template('pages/show_artist.html', artist=data)
+  return render_template('pages/show_artist.html', artist=Artist.query.get(artist_id))
 
 #  Update
 #  ----------------------------------------------------------------
