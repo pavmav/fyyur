@@ -23,7 +23,6 @@ app = Flask(__name__)
 moment = Moment(app)
 app.config.from_object('config')
 db = SQLAlchemy(app)
-
 migrate = Migrate(app, db)
 
 #----------- -----------------------------------------------------------------#
@@ -133,7 +132,6 @@ class Show(db.Model):
     def venue_image_link(self):
       return Venue.query.get(self.venue_id).image_link
 
-
 #----------------------------------------------------------------------------#
 # Filters.
 #----------------------------------------------------------------------------#
@@ -156,7 +154,6 @@ app.jinja_env.filters['datetime'] = format_datetime
 @app.route('/')
 def index():
   return render_template('pages/home.html')
-
 
 #  Venues
 #  ----------------------------------------------------------------
@@ -242,9 +239,29 @@ def delete_venue(venue_id):
   # TODO: Complete this endpoint for taking a venue_id, and using
   # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
 
+  venue = Venue.query.get(venue_id)
+  error = False
+
+  try:
+    db.session.delete(venue)
+    db.session.commit()
+    flash('Venue ' + venue.name + ' was deleted successfully!')
+  except:
+    db.session.rollback()
+    flash('An error occurred. Venue with id' + venue_id + ' could not be deleted.')
+    print(sys.exc_info())
+    error = True
+  finally:
+    db.session.close()
+
   # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
   # clicking that button delete it from the db then redirect the user to the homepage
-  return None
+  
+  if error:
+    abort(500)
+  else:
+    return redirect(url_for('index'))
+
 
 #  Artists
 #  ----------------------------------------------------------------
