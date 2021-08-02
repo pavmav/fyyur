@@ -68,6 +68,9 @@ class Venue(db.Model):
       return Show.query.filter(Show.venue_id == self.id, 
                               Show.start_time > func.now()).count()
 
+    def __repr__(self):
+        return f'<Venue {self.id} {self.name}>'
+
 class Artist(db.Model):
     __tablename__ = 'Artist'
 
@@ -103,6 +106,9 @@ class Artist(db.Model):
     def upcoming_shows_count(self):
       return Show.query.filter(Show.artist_id == self.id, 
                               Show.start_time > func.now()).count()
+
+    def __repr__(self):
+        return f'<Artist {self.id} {self.name}>'
 
 class Show(db.Model):
     __tablename__ = 'Show'
@@ -170,18 +176,14 @@ def venues():
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
-  # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
-  # seach for Hop should return "The Musical Hop".
-  # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
-  response={
-    "count": 1,
-    "data": [{
-      "id": 2,
-      "name": "The Dueling Pianos Bar",
-      "num_upcoming_shows": 0,
-    }]
-  }
-  return render_template('pages/search_venues.html', results=response, search_term=request.form.get('search_term', ''))
+  search_term = request.form.get('search_term', '')
+
+  venues = Venue.query.filter(Venue.name.ilike(f'%{search_term}%')).all()
+  response = {}
+  response['count'] = len(venues)
+  response['data'] = venues
+
+  return render_template('pages/search_venues.html', results=response, search_term=search_term)
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
@@ -198,9 +200,6 @@ def create_venue_form():
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
-  # TODO: insert form data as a new Venue record in the db, instead
-  # TODO: modify data to be the data object returned from db insertion
-
   form = VenueForm()
   
   venue = Venue()
@@ -237,13 +236,6 @@ def create_venue_submission():
   else:
     return redirect(url_for('show_venue', venue_id=venue_id))
 
-
-  # on successful db insert, flash success
-  
-  # TODO: on unsuccessful db insert, flash an error instead.
-  # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
-  # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-  return render_template('pages/home.html')
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
