@@ -158,7 +158,7 @@ def index():
 @app.route('/venues')
 def venues():
   data = []
-  places = db.session.query(Artist.city, Artist.state).distinct().all()
+  places = db.session.query(Venue.city, Venue.state).distinct().all()
   for place in places:
     data.append({
       'city': place[0],
@@ -201,8 +201,45 @@ def create_venue_submission():
   # TODO: insert form data as a new Venue record in the db, instead
   # TODO: modify data to be the data object returned from db insertion
 
+  form = VenueForm()
+  
+  venue = Venue()
+  venue.name = form.name.data
+  venue.city = form.city.data
+  venue.state = form.state.data
+  venue.address = form.address.data
+  venue.phone = form.phone.data
+  venue.image_link = form.image_link.data
+  venue.genres = form.genres.data
+  venue.facebook_link = form.facebook_link.data
+  venue.website = form.website_link.data
+  venue.seeking_talent = form.seeking_talent.data
+  venue.seeking_description = form.seeking_description.data
+
+  error = False
+  venue_id = None
+
+  try:
+    db.session.add(venue)
+    db.session.commit()
+    venue_id = venue.id
+    flash('Venue ' + request.form['name'] + ' was successfully listed!')
+  except:
+    db.session.rollback()
+    flash('An error occurred. Venue ' + form.name.name + ' could not be listed.')
+    print(sys.exc_info())
+    error = True
+  finally:
+    db.session.close()
+
+  if error:
+    abort(500)
+  else:
+    return redirect(url_for('show_venue', venue_id=venue_id))
+
+
   # on successful db insert, flash success
-  flash('Venue ' + request.form['name'] + ' was successfully listed!')
+  
   # TODO: on unsuccessful db insert, flash an error instead.
   # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
   # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
@@ -316,6 +353,7 @@ def edit_venue_submission(venue_id):
     db.session.commit()
   except:
     db.session.rollback()
+    flash('Some error occured. Venue ' + form.name.data + ' could not be saved!')
     print(sys.exc_info())
     error = True
   finally:
