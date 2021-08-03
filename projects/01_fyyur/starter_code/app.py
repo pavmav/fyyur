@@ -318,7 +318,7 @@ def edit_artist_submission(artist_id):
   artist.website = form.website_link.data
   artist.seeking_venue = form.seeking_venue.data
   artist.seeking_description = form.seeking_description.data
-
+  
   error = False
 
   try:
@@ -336,8 +336,6 @@ def edit_artist_submission(artist_id):
     abort(500)
   else:
     return redirect(url_for('show_artist', artist_id=artist_id))
-
-  
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
@@ -409,6 +407,42 @@ def create_artist_submission():
   # called upon submitting the new artist listing form
   # TODO: insert form data as a new Venue record in the db, instead
   # TODO: modify data to be the data object returned from db insertion
+  form = ArtistForm()
+
+  artist = Artist()
+
+  artist.name = form.name.data
+  artist.city = form.city.data
+  artist.state = form.state.data
+  artist.phone = form.phone.data
+  artist.image_link = form.image_link.data
+  artist.genres = form.genres.data
+  artist.facebook_link = form.facebook_link.data
+  artist.website = form.website_link.data
+  artist.seeking_venue = form.seeking_venue.data
+  artist.seeking_description = form.seeking_description.data
+
+  error = False
+  artist_id = None
+
+  try:
+    db.session.add(artist)
+    db.session.commit()
+    artist_id = artist.id
+    flash(f'Artist {form.name.data} was successfully listed!')
+  except:
+    db.session.rollback()
+    flash(f'Some error occured. Artist {form.name.data} could not be listed!')
+    print(sys.exc_info())
+    error = True
+  finally:
+    db.session.close()
+
+  if error:
+    abort(500)
+  else:
+    return redirect(url_for('show_artist', artist_id=artist_id))
+
 
   # on successful db insert, flash success
   flash('Artist ' + request.form['name'] + ' was successfully listed!')
