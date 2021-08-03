@@ -305,7 +305,10 @@ def edit_artist(artist_id):
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
 def edit_artist_submission(artist_id):
-  form = ArtistForm()
+  form = ArtistForm(request.form, meta={"csrf": False})
+
+  if not form.validate_on_submit():
+    return render_template('forms/edit_artist.html', form=form, artist=Artist.query.get(artist_id))
 
   artist = Artist.query.get(artist_id)
 
