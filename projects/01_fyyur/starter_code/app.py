@@ -15,6 +15,7 @@ from flask_wtf import Form
 from forms import *
 from sqlalchemy.sql import func
 import sys
+import os
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -458,15 +459,33 @@ def create_shows():
 
 @app.route('/shows/create', methods=['POST'])
 def create_show_submission():
-  # called to create new shows in the db, upon submitting new show listing form
-  # TODO: insert form data as a new Show record in the db, instead
 
-  # on successful db insert, flash success
-  flash('Show was successfully listed!')
-  # TODO: on unsuccessful db insert, flash an error instead.
-  # e.g., flash('An error occurred. Show could not be listed.')
-  # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-  return render_template('pages/home.html')
+  form = ShowForm()
+
+  show = Show()
+
+  show.artist_id = form.artist_id.data
+  show.venue_id = form.venue_id.data
+  show.start_time = form.start_time.data
+
+  error = True
+
+  try:
+    db.session.add(show)
+    db.session.commit()
+    flash('Show was successfully listed!')
+    error = False
+  except:
+    db.session.rollback()
+    flash('An error occured. Show could not be listed!')
+    print(sys.exc_info())
+  finally:
+    db.session.close()
+
+  if error:
+    abort(500)
+  else:
+    return redirect(url_for('shows'))
 
 @app.errorhandler(404)
 def not_found_error(error):
@@ -492,12 +511,13 @@ if not app.debug:
 #----------------------------------------------------------------------------#
 
 # Default port:
+'''
 if __name__ == '__main__':
-    app.run(host='0.0.0.0')
+    app.run()
+'''
 
 # Or specify port manually:
-'''
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
-'''
