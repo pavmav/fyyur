@@ -5,9 +5,11 @@
     <form class="form" method="post" action="/artists/{{artist.id}}/edit">
       <h3 class="form-heading">Edit artist <em>{{ artist.name }}</em></h3>
       {% for field, errors in form.errors.items() %}
-          <small style="color: red;">
-              {{ ', '.join(errors) }}
-          </small>
+        {% for error in errors %}
+          <div style="color: red;">
+            {{ error }}
+          </div>
+        {% endfor %}
       {% endfor %}
       <div class="form-group">
         <label for="name">Name</label>

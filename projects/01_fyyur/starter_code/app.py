@@ -198,7 +198,7 @@ def create_venue_form():
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
-  form = VenueForm()
+  form = VenueForm(request.form, meta={"csrf": False})
   
   venue = Venue()
   venue.name = form.name.data
@@ -364,7 +364,7 @@ def edit_venue(venue_id):
 
 @app.route('/venues/<int:venue_id>/edit', methods=['POST'])
 def edit_venue_submission(venue_id):
-  form = VenueForm()
+  form = VenueForm(request.form, meta={"csrf": False})
   
   venue = Venue.query.get(venue_id)
 
@@ -409,7 +409,10 @@ def create_artist_form():
 @app.route('/artists/create', methods=['POST'])
 def create_artist_submission():
 
-  form = ArtistForm()
+  form = ArtistForm(request.form, meta={"csrf": False})
+
+  if not form.validate_on_submit():
+    return render_template('forms/new_artist.html', form=form)
 
   artist = Artist()
 
