@@ -89,11 +89,13 @@ def show_venue(venue_id):
 
 @app.route('/venues/create', methods=['GET'])
 def create_venue_form():
+  '''Displays a form for creation of a new Venue'''
   form = VenueForm()
   return render_template('forms/new_venue.html', form=form)
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
+  '''Creates a new Venue record in db and fills it with information from the submitted form'''
   form = VenueForm(request.form, meta={"csrf": False})
   
   venue = Venue()
@@ -133,6 +135,12 @@ def create_venue_submission():
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
+  '''Deletes Venue from database and redirects to index page
+  
+  Args:
+    venue_id: ID of the Venue to be deleted
+  '''
+
   venue = Venue.query.get(venue_id)
   error = False
 
@@ -179,6 +187,12 @@ def show_artist(artist_id):
 #  ----------------------------------------------------------------
 @app.route('/artists/<int:artist_id>/edit', methods=['GET'])
 def edit_artist(artist_id):
+  '''Displays a form for editing of an Artist
+  
+  Args:
+    artist_id: ID of the Artist to be adited
+  '''
+
   form = ArtistForm()
 
   artist = Artist.query.get(artist_id)
@@ -198,6 +212,12 @@ def edit_artist(artist_id):
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
 def edit_artist_submission(artist_id):
+  '''Updates the Artist record in the db with the information from the submitted form
+     and redirects to this Artist's page
+  
+  Args:
+    artist_id: ID of the Artist to be adited
+  '''
   form = ArtistForm(request.form, meta={"csrf": False})
 
   if not form.validate_on_submit():
@@ -236,6 +256,11 @@ def edit_artist_submission(artist_id):
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
+  '''Displays a form for editing of a Venue
+  
+  Args:
+    venue_id: ID of the Venue to be adited
+  '''
 
   form = VenueForm()
 
@@ -257,6 +282,13 @@ def edit_venue(venue_id):
 
 @app.route('/venues/<int:venue_id>/edit', methods=['POST'])
 def edit_venue_submission(venue_id):
+  '''Updates the Venue record in the db with the information from the submitted form
+     and redirects to this Venue's page
+  
+  Args:
+    venue_id: ID of the Venue to be adited
+  '''
+
   form = VenueForm(request.form, meta={"csrf": False})
   
   venue = Venue.query.get(venue_id)
@@ -296,11 +328,14 @@ def edit_venue_submission(venue_id):
 
 @app.route('/artists/create', methods=['GET'])
 def create_artist_form():
+  '''Displays a form for creation of a new Artist'''
+
   form = ArtistForm()
   return render_template('forms/new_artist.html', form=form)
 
 @app.route('/artists/create', methods=['POST'])
 def create_artist_submission():
+  '''Creates a new Artist record in db and fills it with information from the submitted form'''
 
   form = ArtistForm(request.form, meta={"csrf": False})
 
@@ -352,12 +387,15 @@ def shows():
 
 @app.route('/shows/create')
 def create_shows():
+  '''Displays a form for creation of a new Show'''
+
   # renders form. do not touch.
   form = ShowForm()
   return render_template('forms/new_show.html', form=form)
 
 @app.route('/shows/create', methods=['POST'])
 def create_show_submission():
+  '''Creates a new Show record in db and fills it with information from the submitted form'''
 
   form = ShowForm()
 
