@@ -1,6 +1,8 @@
 from enum import unique
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql import func
+from sqlalchemy.sql.expression import text
+from datetime import datetime
 
 db = SQLAlchemy()
 
@@ -38,13 +40,17 @@ class Venue(db.Model):
 
     @property
     def upcoming_shows(self):
-      return Show.query.filter(Show.venue_id == self.id, 
-                              Show.start_time > func.now()).all()
+      return db.session.query(Show).\
+              join(Venue, Show.venue_id == Venue.id).\
+              filter(Venue.id == self.id, Show.start_time > func.now()).\
+              all()
 
     @property
     def upcoming_shows_count(self):
-      return Show.query.filter(Show.venue_id == self.id, 
-                              Show.start_time > func.now()).count()
+      return db.session.query(Show).\
+              join(Venue, Show.venue_id == Venue.id).\
+              filter(Venue.id == self.id, Show.start_time > func.now()).\
+              count()
 
     def __repr__(self):
         return f'<Venue {self.id} {self.name}>'
@@ -77,13 +83,20 @@ class Artist(db.Model):
 
     @property
     def upcoming_shows(self):
-      return Show.query.filter(Show.artist_id == self.id, 
-                              Show.start_time > func.now()).all()
+      return db.session.query(Show).\
+              join(Artist, Show.artist_id == Artist.id).\
+              filter(Artist.id == self.id, Show.start_time > func.now()).\
+              all()
+      
 
     @property
     def upcoming_shows_count(self):
-      return Show.query.filter(Show.artist_id == self.id, 
-                              Show.start_time > func.now()).count()
+      query_text = text('''SELECT *
+                            FROM "Artist" 
+                              JOIN "Show" ON "Artist".id = "Show".artist_id 
+                          WHERE "Show".start_time > :dtnow
+                            AND "Artist".id = :artist_id''')
+      return len(db.session.connection().execute(query_text, dtnow=datetime.now(), artist_id=self.id).all())
 
     def __repr__(self):
         return f'<Artist {self.id} {self.name}>'
